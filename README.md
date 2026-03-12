@@ -26,22 +26,25 @@ Grant microphone access when prompted.
 
 ```mermaid
 flowchart TD
-    subgraph UI["UI layer — ContentView (SwiftUI · @MainActor)"]
-        Toggle["NC Toggle"] & Slider["Volume Slider"] & Meter["Level Meter"] & Btn["Start / Stop"]
+    subgraph UI[UI - ContentView SwiftUI]
+        Toggle[NC Toggle]
+        Slider[Volume Slider]
+        Meter[Level Meter]
+        Btn[Start / Stop]
     end
 
-    subgraph Engine["AudioEngine (AVAudioEngine)"]
-        IN["inputNode\n+ Voice Processing I/O"]
-        MX["mainMixerNode\n(outputVolume)"]
-        TAP["buffer tap → RMS"]
+    subgraph Engine[AudioEngine - AVAudioEngine]
+        IN[inputNode\nVoice Processing I/O]
+        MX[mainMixerNode\noutputVolume]
+        TAP[buffer tap\nRMS meter]
     end
 
-    Mic(["Mic"]) --> IN
-    IN --> MX --> HP(["Headphones"])
-    IN --> TAP -->|"@Published inputLevel"| Meter
-    Toggle -->|"restart on change"| Engine
-    Slider -->|"outputVolume"| MX
-    Btn -->|"start / stop"| Engine
+    Mic([Mic]) --> IN
+    IN --> MX --> HP([Headphones])
+    IN --> TAP -->|inputLevel| Meter
+    Toggle -->|restart on change| Engine
+    Slider -->|outputVolume| MX
+    Btn -->|start / stop| Engine
 ```
 
 > See [`docs/architecture-macos.md`](docs/architecture-macos.md) for the full diagram.
@@ -74,25 +77,29 @@ make linux-run
 
 ```mermaid
 flowchart TD
-    subgraph UI["UI layer — SoftNoiseWindow (GTK4 / libadwaita)"]
-        NCRow["NC Switch"] & VolRow["Volume Scale"] & LBar["Level Bar"] & Btn2["Start / Stop"]
+    subgraph UI[UI - SoftNoiseWindow GTK4/Adw]
+        NCRow[NC Switch]
+        VolRow[Volume Scale]
+        LBar[Level Bar]
+        Btn2[Start / Stop]
     end
 
-    subgraph Engine["AudioEngine (sounddevice · audio thread)"]
-        SD["Stream\n48 kHz · 480 frames · float32"]
-        RNN["rnnoise ctypes\n(optional — skipped if lib missing)"]
-        RMS2["RMS → 0–1 level"]
-        Out["× monitor_volume → out"]
+    subgraph Engine[AudioEngine - sounddevice audio thread]
+        SD[Stream\n48 kHz / 480 frames / float32]
+        RNN[rnnoise ctypes\noptional]
+        RMS2[RMS 0-1 level]
+        Out[x monitor_volume]
     end
 
-    PW(["PipeWire / PulseAudio"])
-    Mic2(["Mic"]) --> PW --> SD
-    SD --> RNN --> RMS2 & Out
-    Out --> PW --> HP2(["Headphones"])
-    RMS2 -->|"GLib.idle_add"| LBar
-    NCRow -->|"toggle_nc() — no restart"| RNN
-    VolRow -->|"set_monitor_volume()"| Out
-    Btn2 -->|"start / stop"| SD
+    PW([PipeWire / PulseAudio])
+    Mic2([Mic]) --> PW --> SD
+    SD --> RNN --> RMS2
+    RNN --> Out
+    Out --> PW --> HP2([Headphones])
+    RMS2 -->|GLib.idle_add| LBar
+    NCRow -->|toggle_nc no restart| RNN
+    VolRow -->|set_monitor_volume| Out
+    Btn2 -->|start / stop| SD
 ```
 
 > See [`docs/architecture-linux.md`](docs/architecture-linux.md) for the full diagram.

@@ -4,68 +4,62 @@
 
 ```mermaid
 flowchart TD
-    subgraph App["SoftNoiseApp (Adw.Application)"]
-        ACT["activate signal"]
+    subgraph App[SoftNoiseApp - Adw.Application]
+        ACT[activate signal]
     end
 
-    subgraph Win["SoftNoiseWindow (Adw.ApplicationWindow · UI thread)"]
+    subgraph Win[SoftNoiseWindow - Adw.ApplicationWindow]
         direction TB
-        NCRow["AdwSwitchRow\nNoise Cancellation"]
-        VolRow["AdwActionRow + GtkScale\nMonitor Volume 0–1"]
-        LevelBar["GtkLevelBar\n(offsets 0.6 / 0.85 / 1.0)"]
-        StartStop["GtkButton\nStart / Stop"]
-        InfoText["GtkLabel ×4\ninfo + pactl cmd"]
+        NCRow[AdwSwitchRow\nNoise Cancellation]
+        VolRow[AdwActionRow + GtkScale\nMonitor Volume 0-1]
+        LevelBar[GtkLevelBar\noffsets 0.6 / 0.85 / 1.0]
+        StartStop[GtkButton Start / Stop]
+        InfoText[GtkLabel info + pactl cmd]
     end
 
-    subgraph Engine["AudioEngine (owns stream)"]
+    subgraph Engine[AudioEngine]
         direction TB
-        SD["sounddevice.Stream\nsamplerate=48000\nblocksize=480\nchannels=1, float32\nlatency=low"]
-
-        subgraph CB["_audio_callback (audio thread)"]
-            direction TB
-            Copy["indata[:,0].copy()"]
-            RNN["_RNNoiseState.process()\n(if nc_enabled and available)"]
-            RMS["_rms_to_level()\n−60 dB…0 dB → 0…1"]
-            Out["outdata[:,0] = samples × monitor_volume"]
-        end
-
-        Lock["threading.Lock\n(guards nc_enabled, monitor_volume)"]
-        Idle["GLib.idle_add()\n→ UI thread callbacks"]
+        SD[sounddevice.Stream\n48000 Hz / 480 frames / float32]
+        Lock[threading.Lock\nguards nc_enabled and monitor_volume]
+        Copy[indata copy]
+        RNN[RNNoiseState.process\nif nc_enabled and available]
+        RMS[rms_to_level\n-60dB to 0dB mapped to 0-1]
+        Out[outdata = samples x monitor_volume]
+        Idle[GLib.idle_add\nUI thread callbacks]
     end
 
-    subgraph RNNLib["rnnoise ctypes shim"]
+    subgraph RNNLib[rnnoise ctypes shim]
         direction TB
-        CDLL["ctypes.CDLL('librnnoise.so.0')"]
-        Create["rnnoise_create(NULL)\n→ DenoiseState*"]
-        Process["rnnoise_process_frame()\n480 × float32 (int16-range scaled)"]
+        CDLL[ctypes.CDLL librnnoise.so.0]
+        Create[rnnoise_create\nDenoiseState pointer]
+        Process[rnnoise_process_frame\n480 x float32 int16-range]
     end
 
-    Mic(["Microphone\n(default input)"])
-    HP(["Headphones / Speakers\n(default output)"])
-    PW(["PipeWire / PulseAudio\n(PortAudio compat layer)"])
+    Mic([Microphone])
+    HP([Headphones / Speakers])
+    PW([PipeWire / PulseAudio])
 
     ACT --> Win
     Win --> Engine
 
-    PW -->|PCM| Mic
+    PW --> Mic
     Mic -->|float32 frames| SD
-    SD --> CB
-    CB --> Copy --> RNN --> RMS --> Out
+    SD --> Copy --> RNN --> RMS --> Out
     Out -->|float32| HP
     HP --> PW
 
-    RNN <-->|"480 samples\n(int16-scaled)"| Process
-    Process <--> Create
-    Create <--> CDLL
+    RNN -->|480 samples| Process
+    Process --> Create
+    Create --> CDLL
 
     RMS -->|level float| Idle
     Idle -->|on_level_changed| LevelBar
 
-    NCRow -->|toggle_nc()| Lock
-    VolRow -->|set_monitor_volume()| Lock
-    Lock --> CB
+    NCRow -->|toggle_nc| Lock
+    VolRow -->|set_monitor_volume| Lock
+    Lock --> Copy
 
-    StartStop -->|start() / stop()| SD
+    StartStop -->|start / stop| SD
 ```
 
 ## Key design decisions
