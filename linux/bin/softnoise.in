@@ -1,0 +1,8 @@
+#!/usr/bin/env @PYTHON@
+import sys
+import os
+
+sys.path.insert(0, '@PKGDATADIR@')
+
+from softnoise.__main__ import main
+sys.exit(main())

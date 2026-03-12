@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#1c71d8"/>
+
+  <!-- Microphone body -->
+  <rect x="50" y="24" width="28" height="50" rx="14" ry="14" fill="white"/>
+
+  <!-- Microphone stand arc -->
+  <path d="M 36 68 Q 36 96 64 96 Q 92 96 92 68"
+        fill="none" stroke="white" stroke-width="6"
+        stroke-linecap="round"/>
+
+  <!-- Stand pole -->
+  <line x1="64" y1="96" x2="64" y2="110"
+        stroke="white" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Base -->
+  <line x1="48" y1="110" x2="80" y2="110"
+        stroke="white" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- NC wave lines (right side) -->
+  <path d="M 98 50 Q 106 58 98 66" fill="none" stroke="white"
+        stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+  <path d="M 104 44 Q 116 58 104 72" fill="none" stroke="white"
+        stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+</svg>

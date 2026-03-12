@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=SoftNoise
+Comment=Microphone noise cancellation and monitor mode
+Exec=softnoise
+Icon=com.softnoise.app
+Terminal=false
+Type=Application
+Categories=Audio;Utility;GNOME;GTK;
+Keywords=noise;microphone;audio;noise cancellation;
+StartupNotify=true
+StartupWMClass=softnoise

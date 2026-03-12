@@ -1,0 +1,57 @@
+app-id: com.softnoise.app
+runtime: org.gnome.Platform
+runtime-version: '47'
+sdk: org.gnome.Sdk
+command: softnoise
+
+finish-args:
+  # PipeWire exposes a PulseAudio-compatible socket by default
+  - --socket=pulseaudio
+  # Wayland + fallback X11
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  # No filesystem access needed
+  - --device=dri
+
+modules:
+  # ── 1. rnnoise (Xiph autoconf) ──────────────────────────────────────────
+  - name: rnnoise
+    buildsystem: autotools
+    config-opts:
+      - --enable-shared
+      - --disable-static
+      - --enable-examples=no
+    sources:
+      - type: git
+        url: https://github.com/xiph/rnnoise.git
+        commit: 7f449bf8bd3b933891d12c30112268c4428e0539
+    post-install:
+      - ldconfig -n /app/lib || true
+
+  # ── 2. numpy ────────────────────────────────────────────────────────────
+  - name: python3-numpy
+    buildsystem: simple
+    build-commands:
+      - pip3 install --no-index --find-links=. --prefix=/app numpy-*.whl
+    sources:
+      - type: file
+        url: https://files.pythonhosted.org/packages/py3/n/numpy/numpy-1.26.4-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+        sha256: 2a02aba9ed12e4ac4eb3ea9421c420301a0c6460d9830d74a9df87efa4912010
+
+  # ── 3. sounddevice (bundles PortAudio) ──────────────────────────────────
+  - name: python3-sounddevice
+    buildsystem: simple
+    build-commands:
+      - pip3 install --no-index --find-links=. --prefix=/app sounddevice-*.whl
+    sources:
+      - type: file
+        url: https://files.pythonhosted.org/packages/py3/s/sounddevice/sounddevice-0.4.6-py3-none-any.whl
+        sha256: 2e49e69c1bf5af6c7d417b674dca3a54b8b9e0e56baa9eeadb2e6b8a90c6ab69
+
+  # ── 4. softnoise (meson) ────────────────────────────────────────────────
+  - name: softnoise
+    buildsystem: meson
+    sources:
+      - type: dir
+        path: ..

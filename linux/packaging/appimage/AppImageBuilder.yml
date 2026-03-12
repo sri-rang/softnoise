@@ -1,0 +1,79 @@
+version: 1
+
+script:
+  - rm -rf AppDir || true
+
+AppDir:
+  path: AppDir
+
+  app_info:
+    id: com.softnoise.app
+    name: SoftNoise
+    icon: com.softnoise.app
+    version: 1.0.0
+    exec: usr/bin/python3
+    exec_args: '-m softnoise $@'
+
+  apt:
+    arch: amd64
+    sources:
+      - sourceline: 'deb [arch=amd64] http://archive.ubuntu.com/ubuntu jammy main restricted universe multiverse'
+        key_url: 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3b4fe6acc0b21f32'
+      - sourceline: 'deb [arch=amd64] http://archive.ubuntu.com/ubuntu jammy-updates main restricted universe multiverse'
+
+    include:
+      - python3
+      - python3-gi
+      - python3-gi-cairo
+      - gir1.2-gtk-4.0
+      - gir1.2-adw-1
+      - libgtk-4-1
+      - libadwaita-1-0
+      - python3-numpy
+      - python3-sounddevice
+      - librnnoise0
+      - libportaudio2
+      - pipewire
+      - libpipewire-0.3-0
+
+    exclude:
+      - humanity-icon-theme
+      - hicolor-icon-theme
+      - adwaita-icon-theme
+
+  files:
+    include:
+      - usr/lib/python3*
+      - usr/lib/python3/dist-packages/gi/**
+      - usr/lib/x86_64-linux-gnu/libgtk-4.so*
+      - usr/lib/x86_64-linux-gnu/libadwaita-1.so*
+      - usr/lib/x86_64-linux-gnu/librnnoise.so*
+      - usr/lib/x86_64-linux-gnu/libportaudio.so*
+
+    exclude:
+      - usr/share/doc
+      - usr/share/man
+
+  runtime:
+    env:
+      PYTHONPATH: '$APPDIR/usr/lib/python3/dist-packages:$APPDIR/usr/share/softnoise'
+
+  test:
+    fedora-37:
+      image: appimagecrafters/tests-env:fedora-37
+      command: ./AppRun --help
+      use_host_x: true
+
+  after_bundle:
+    # Install the softnoise Python package into the AppDir
+    - install -d AppDir/usr/share/softnoise
+    - cp -r ../../softnoise AppDir/usr/share/softnoise/
+    - install -Dm644 ../../data/com.softnoise.app.desktop AppDir/usr/share/applications/com.softnoise.app.desktop
+    - install -Dm644 ../../data/icons/scalable/apps/com.softnoise.app.svg AppDir/usr/share/icons/hicolor/scalable/apps/com.softnoise.app.svg
+    - ln -sf usr/share/icons/hicolor/scalable/apps/com.softnoise.app.svg AppDir/com.softnoise.app.svg
+    - ln -sf usr/share/applications/com.softnoise.app.desktop AppDir/com.softnoise.app.desktop
+
+AppImage:
+  arch: x86_64
+  update-information: None
+  sign-key: None
