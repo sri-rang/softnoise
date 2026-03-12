@@ -20,7 +20,31 @@ Real-time microphone noise cancellation and monitor mode (sidetone).
 make run
 ```
 
-This builds and opens the app. Grant microphone access when prompted.
+Grant microphone access when prompted.
+
+**Architecture overview**
+
+```mermaid
+flowchart TD
+    subgraph UI["UI layer — ContentView (SwiftUI · @MainActor)"]
+        Toggle["NC Toggle"] & Slider["Volume Slider"] & Meter["Level Meter"] & Btn["Start / Stop"]
+    end
+
+    subgraph Engine["AudioEngine (AVAudioEngine)"]
+        IN["inputNode\n+ Voice Processing I/O"]
+        MX["mainMixerNode\n(outputVolume)"]
+        TAP["buffer tap → RMS"]
+    end
+
+    Mic(["Mic"]) --> IN
+    IN --> MX --> HP(["Headphones"])
+    IN --> TAP -->|"@Published inputLevel"| Meter
+    Toggle -->|"restart on change"| Engine
+    Slider -->|"outputVolume"| MX
+    Btn -->|"start / stop"| Engine
+```
+
+> See [`docs/architecture-macos.md`](docs/architecture-macos.md) for the full diagram.
 
 ---
 
@@ -46,7 +70,34 @@ sudo apt install python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 \
 make linux-run
 ```
 
-**Build installable packages**
+**Architecture overview**
+
+```mermaid
+flowchart TD
+    subgraph UI["UI layer — SoftNoiseWindow (GTK4 / libadwaita)"]
+        NCRow["NC Switch"] & VolRow["Volume Scale"] & LBar["Level Bar"] & Btn2["Start / Stop"]
+    end
+
+    subgraph Engine["AudioEngine (sounddevice · audio thread)"]
+        SD["Stream\n48 kHz · 480 frames · float32"]
+        RNN["rnnoise ctypes\n(optional — skipped if lib missing)"]
+        RMS2["RMS → 0–1 level"]
+        Out["× monitor_volume → out"]
+    end
+
+    PW(["PipeWire / PulseAudio"])
+    Mic2(["Mic"]) --> PW --> SD
+    SD --> RNN --> RMS2 & Out
+    Out --> PW --> HP2(["Headphones"])
+    RMS2 -->|"GLib.idle_add"| LBar
+    NCRow -->|"toggle_nc() — no restart"| RNN
+    VolRow -->|"set_monitor_volume()"| Out
+    Btn2 -->|"start / stop"| SD
+```
+
+> See [`docs/architecture-linux.md`](docs/architecture-linux.md) for the full diagram.
+
+### Build installable packages
 
 ```sh
 make linux-build      # meson build (verifies install layout)
